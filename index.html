@@ -19,7 +19,7 @@
     <div class="flex items-center space-x-3">
       <button onclick="openConfigModal()" class="bg-gray-700 hover:bg-gray-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition flex items-center space-x-2 border border-gray-600">
         <i class="fa-solid fa-key text-amber-400"></i>
-        <span>API Key Setup</span>
+        <span>Access Token Setup</span>
       </button>
     </div>
   </header>
@@ -38,7 +38,7 @@
         <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
         <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-500 mb-2"></i>
         <p id="fileNameDisplay" class="text-sm text-gray-300 font-medium">Click to select a file or drag & drop here</p>
-        <p class="text-xs text-gray-500 mt-1">Files are saved as 0-quota Google Docs chunks across all devices</p>
+        <p class="text-xs text-gray-500 mt-1">Uploaded files are chunked into 0-byte quota Google Docs</p>
       </div>
 
       <div class="flex justify-end">
@@ -102,29 +102,27 @@
           <i class="fa-solid fa-xmark text-xl"></i>
         </button>
       </div>
-      <div id="previewBody" class="flex-1 overflow-auto flex items-center justify-center p-2 bg-gray-900 rounded-xl min-h-[300px]">
-        <!-- Preview content inserts dynamically -->
-      </div>
+      <div id="previewBody" class="flex-1 overflow-auto flex items-center justify-center p-2 bg-gray-900 rounded-xl min-h-[300px]"></div>
     </div>
   </div>
 
   <!-- API CONFIG MODAL -->
-  <!-- <div id="configModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center hidden backdrop-blur-sm">
+  <div id="configModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center hidden backdrop-blur-sm">
     <div class="bg-gray-800 border border-gray-700 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-gray-700 pb-3">
-        <h3 class="text-lg font-bold text-white">Google Drive API Setup</h3>
+        <h3 class="text-lg font-bold text-white">Google Drive Token Setup</h3>
         <button onclick="closeConfigModal()" class="text-gray-400 hover:text-white">
           <i class="fa-solid fa-xmark text-xl"></i>
         </button>
       </div>
       <div class="space-y-3">
         <div>
-          <label class="text-xs font-bold text-gray-300 uppercase">Google API Key / Bearer Access Token</label>
-          <input type="password" id="apiKeyInput" placeholder="Paste Key or Access Token" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 mt-1">
+          <label class="text-xs font-bold text-gray-300 uppercase">Bearer Access Token (ya29...)</label>
+          <input type="password" id="apiKeyInput" placeholder="Paste Access Token (starts with ya29.)" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 mt-1">
         </div>
-        <p class="text-xs text-gray-400 leading-relaxed">
-          Provide your API Key or Access Token to read/write files to Google Drive without requiring user logins.
-        </p>
+        <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-xs text-amber-300 leading-relaxed">
+          <strong>Important:</strong> Simple API Keys (<code>AIza...</code>) are blocked by Google for uploading files. You must use an <strong>Access Token</strong> starting with <code>ya29.</code> from OAuth Playground.
+        </div>
       </div>
       <div class="flex justify-end pt-2">
         <button onclick="saveConfig()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition w-full">
@@ -132,11 +130,11 @@
         </button>
       </div>
     </div>
-  </div> -->
+  </div>
 
   <script>
-    let API_KEY = AIzaSyC9xpamQicbDiryainIguF8r6HdxQtE_jA;
-    const CHUNK_SIZE = 700 * 1024; // ~700KB Base64 chunk per doc
+    let API_KEY = localStorage.getItem("uds_api_key") || "AIzaSyC9xpamQicbDiryainIguF8r6HdxQtE_jA";
+    const CHUNK_SIZE = 500 * 1024; // 500KB chunks for safety
     let selectedFile = null;
 
     window.onload = () => {
@@ -163,23 +161,14 @@
       }
     }
 
-    // Drag & Drop
-    const dropZone = document.getElementById("dropZone");
-    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("border-indigo-500", "bg-indigo-500/5"); });
-    dropZone.addEventListener("dragleave", () => { dropZone.classList.remove("border-indigo-500", "bg-indigo-500/5"); });
-    dropZone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      dropZone.classList.remove("border-indigo-500", "bg-indigo-500/5");
-      if (e.dataTransfer.files.length > 0) {
-        selectedFile = e.dataTransfer.files[0];
-        document.getElementById("fileNameDisplay").innerText = `${selectedFile.name} (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)`;
-        document.getElementById("uploadBtn").disabled = false;
-      }
-    });
-
-    // UPLOAD LOGIC
     async function startUpload() {
       if (!selectedFile) return;
+
+      if (!API_KEY || !API_KEY.startsWith("ya29.")) {
+        alert("Upload Failed: You are using an API Key or empty token. Google Drive upload requires an Access Token starting with 'ya29.'. Open Token Setup and paste a valid token from OAuth Playground.");
+        openConfigModal();
+        return;
+      }
 
       const progressContainer = document.getElementById("progressContainer");
       const progressBar = document.getElementById("progressBar");
@@ -221,8 +210,8 @@
         fetchStoredFiles();
 
       } catch (err) {
-        console.error(err);
-        alert("Upload error: " + err.message);
+        console.error("Upload error:", err);
+        alert("Upload Failed: " + err.message);
         statusText.innerText = "Upload failed.";
       } finally {
         document.getElementById("uploadBtn").disabled = false;
@@ -238,18 +227,13 @@
       });
     }
 
-    // Google Drive REST Calls
     async function createDriveFolder(folderName) {
-      const url = API_KEY.startsWith("ya29.")
-        ? "https://www.googleapis.com/drive/v3/files"
-        : `https://www.googleapis.com/drive/v3/files?key=${API_KEY}`;
-      
-      const headers = { "Content-Type": "application/json" };
-      if (API_KEY.startsWith("ya29.")) headers["Authorization"] = `Bearer ${API_KEY}`;
-
-      const res = await fetch(url, {
+      const res = await fetch("https://www.googleapis.com/drive/v3/files", {
         method: "POST",
-        headers: headers,
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ name: folderName, mimeType: "application/vnd.google-apps.folder" })
       });
       const data = await res.json();
@@ -258,44 +242,60 @@
     }
 
     async function createGoogleDocChunk(folderId, name, textContent) {
-      const url = API_KEY.startsWith("ya29.")
-        ? "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart"
-        : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`;
+      const metadata = {
+        name: name,
+        mimeType: "application/vnd.google-apps.document",
+        parents: [folderId]
+      };
 
-      const metadata = { name: name, mimeType: "application/vnd.google-apps.document", parents: [folderId] };
-      const form = new FormData();
-      form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
-      form.append("file", new Blob([textContent], { type: "text/plain" }));
+      const boundary = "------UDSBoundaryString";
+      const delimiter = "\r\n--" + boundary + "\r\n";
+      const close_delim = "\r\n--" + boundary + "--";
 
-      const headers = {};
-      if (API_KEY.startsWith("ya29.")) headers["Authorization"] = `Bearer ${API_KEY}`;
+      const multipartRequestBody =
+        delimiter +
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+        JSON.stringify(metadata) +
+        delimiter +
+        'Content-Type: text/plain\r\n\r\n' +
+        textContent +
+        close_delim;
 
-      const res = await fetch(url, { method: "POST", headers: headers, body: form });
+      const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": `multipart/related; boundary=${boundary}`
+        },
+        body: multipartRequestBody
+      });
+
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error?.message || "Chunk upload failed");
       }
     }
 
-    // LIST FILES
     async function fetchStoredFiles() {
       const tbody = document.getElementById("filesTableBody");
       tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-400"><i class="fa-solid fa-spinner animate-spin"></i> Fetching files...</td></tr>`;
 
+      if (!API_KEY) {
+        tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-amber-400">No Access Token configured. Click 'Access Token Setup' above to paste your token.</td></tr>`;
+        return;
+      }
+
       try {
         const query = encodeURIComponent("mimeType = 'application/vnd.google-apps.folder' and name contains 'UDS_' and trashed = false");
-        const url = API_KEY.startsWith("ya29.")
-          ? `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`
-          : `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)&key=${API_KEY}`;
+        const headers = { "Authorization": `Bearer ${API_KEY}` };
 
-        const headers = {};
-        if (API_KEY.startsWith("ya29.")) headers["Authorization"] = `Bearer ${API_KEY}`;
-
-        const res = await fetch(url, { headers });
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`, { headers });
         const data = await res.json();
 
+        if (!res.ok) throw new Error(data.error?.message || "Failed to list files");
+
         if (!data.files || data.files.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-500">No files stored in drive.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-500">No files stored in drive yet.</td></tr>`;
           return;
         }
 
@@ -325,40 +325,30 @@
         });
       } catch (err) {
         console.error(err);
-        tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-red-400">Error loading files. Check your API settings.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-red-400">Error loading files: ${err.message}</td></tr>`;
       }
     }
 
-    // DOWNLOAD & PREVIEW REASSEMBLY
     async function loadFileBlob(folderId) {
       const query = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
-      const url = API_KEY.startsWith("ya29.")
-        ? `https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=name&fields=files(id,name)`
-        : `https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=name&fields=files(id,name)&key=${API_KEY}`;
+      const headers = { "Authorization": `Bearer ${API_KEY}` };
 
-      const headers = {};
-      if (API_KEY.startsWith("ya29.")) headers["Authorization"] = `Bearer ${API_KEY}`;
-
-      const res = await fetch(url, { headers });
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=name&fields=files(id,name)`, { headers });
       const data = await res.json();
       const files = data.files || [];
 
-      if (files.length === 0) throw new Error("No file chunks found");
+      if (files.length === 0) throw new Error("No file chunks found inside folder.");
 
       const b64Chunks = [];
       for (let i = 0; i < files.length; i++) {
-        const exportUrl = API_KEY.startsWith("ya29.")
-          ? `https://www.googleapis.com/drive/v3/files/${files[i].id}/export?mimeType=text/plain`
-          : `https://www.googleapis.com/drive/v3/files/${files[i].id}/export?mimeType=text/plain&key=${API_KEY}`;
-
+        const exportUrl = `https://www.googleapis.com/drive/v3/files/${files[i].id}/export?mimeType=text/plain`;
         const exportRes = await fetch(exportUrl, { headers });
         let text = await exportRes.text();
         text = text.replace(/^\uFEFF/, "");
         b64Chunks.push(text.trim());
       }
 
-      const fullBase64 = b64Chunks.join("");
-      return base64ToBlob(fullBase64);
+      return base64ToBlob(b64Chunks.join(""));
     }
 
     async function downloadFile(folderId, fileName) {
