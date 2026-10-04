@@ -522,9 +522,9 @@
                 <span class="material-icons">create_new_folder</span> Add folder
             </button>
 
-            <!-- Hidden inputs -->
-            <input type="file" id="file-input" class="hidden-input" multiple onchange="handleFileUpload(event)">
-            <input type="file" id="folder-input" class="hidden-input" webkitdirectory directory multiple onchange="handleFileUpload(event)">
+            <!-- Hidden inputs configured for multi-device support -->
+            <input type="file" id="file-input" class="hidden-input" multiple="multiple" accept="*/*" onchange="handleFileUpload(event)">
+            <input type="file" id="folder-input" class="hidden-input" webkitdirectory directory multiple="multiple" accept="*/*" onchange="handleFileUpload(event)">
 
             <div class="nav-item active">
                 <span class="material-icons">folder</span> My Drive
