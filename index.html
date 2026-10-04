@@ -167,7 +167,26 @@
             gap: 12px;
         }
 
-        .logo-area span {
+        /* Toggle Sidebar Button */
+        .toggle-sidebar-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .toggle-sidebar-btn:hover {
+            background: var(--hover-color);
+            color: var(--text-color);
+        }
+
+        .logo-area span.title {
             font-size: 22px;
             color: var(--text-secondary);
             font-weight: 500;
@@ -209,6 +228,13 @@
             flex-direction: column;
             gap: 8px;
             user-select: none;
+            transition: transform 0.25s ease, margin-left 0.25s ease;
+        }
+
+        /* Collapsed Sidebar Class */
+        aside.hidden {
+            margin-left: -250px;
+            display: none !important;
         }
 
         /* Draggable Resizer Bar */
@@ -218,6 +244,10 @@
             background: var(--border-color);
             transition: background 0.2s;
             z-index: 10;
+        }
+
+        .resizer.hidden {
+            display: none !important;
         }
 
         .resizer:hover, .resizer.dragging {
@@ -520,8 +550,12 @@
     <!-- Main App -->
     <header>
         <div class="logo-area">
+            <!-- Left-side Button to Hide / Show Sidebar -->
+            <button class="toggle-sidebar-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <span class="material-icons">menu</span>
+            </button>
             <span class="material-icons" style="font-size: 36px; color: var(--primary);">add_to_photos</span>
-            <span>Drive</span>
+            <span class="title">Drive</span>
         </div>
         <div class="user-profile">
             <span id="user-display-email"></span>
@@ -538,7 +572,7 @@
                 <span class="material-icons">create_new_folder</span> Add folder
             </button>
 
-            <!-- Hidden inputs configured for multi-device support -->
+            <!-- Hidden inputs -->
             <input type="file" id="file-input" class="hidden-input" multiple="multiple" accept="*/*" onchange="handleFileUpload(event)">
             <input type="file" id="folder-input" class="hidden-input" webkitdirectory directory multiple="multiple" accept="*/*" onchange="handleFileUpload(event)">
 
@@ -588,7 +622,7 @@
         </div>
     </div>
 
-    <!-- Safe Mass Upload Progress Box -->
+    <!-- Upload Progress Box -->
     <div id="upload-progress-overlay">
         <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 500;">
             <span id="upload-status-title">Uploading folder...</span>
@@ -601,10 +635,15 @@
     </div>
 
     <script>
-        // Sidebar Resizing Functionality
+        // Sidebar Resizing & Toggle Functionality
         const sidebar = document.getElementById('sidebar');
         const resizer = document.getElementById('resizer');
         let isResizing = false;
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('hidden');
+            resizer.classList.toggle('hidden');
+        }
 
         resizer.addEventListener('mousedown', (e) => {
             isResizing = true;
@@ -781,7 +820,6 @@
             }
         }
 
-        // --- ROBUST FILE BUFFERING FOR PERSISTENT REFRESH SAFETY ---
         async function handleFileUpload(event) {
             const uploadedFiles = event.target.files;
             if (!uploadedFiles || uploadedFiles.length === 0) return;
@@ -810,8 +848,6 @@
                 detailsText.innerText = displayName;
 
                 try {
-                    // Read file into an ArrayBuffer and convert to a standalone Blob 
-                    // so it doesn't lose its reference/handle upon page refresh.
                     const arrayBuffer = await file.arrayBuffer();
                     const cleanBlob = new Blob([arrayBuffer], { type: file.type });
 
