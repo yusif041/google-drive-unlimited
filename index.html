@@ -196,16 +196,32 @@
             display: flex;
             flex: 1;
             overflow: hidden;
+            position: relative;
         }
 
         aside {
             width: 250px;
+            min-width: 160px;
+            max-width: 500px;
             padding: 16px;
-            border-right: 1px solid var(--border-color);
             background: var(--surface-color);
             display: flex;
             flex-direction: column;
             gap: 8px;
+            user-select: none;
+        }
+
+        /* Draggable Resizer Bar */
+        .resizer {
+            width: 6px;
+            cursor: col-resize;
+            background: var(--border-color);
+            transition: background 0.2s;
+            z-index: 10;
+        }
+
+        .resizer:hover, .resizer.dragging {
+            background: var(--primary);
         }
 
         .upload-btn {
@@ -514,7 +530,7 @@
     </header>
 
     <div class="main-container">
-        <aside>
+        <aside id="sidebar">
             <button class="upload-btn" onclick="document.getElementById('file-input').click()">
                 <span class="material-icons">add</span> Upload Files
             </button>
@@ -530,6 +546,9 @@
                 <span class="material-icons">folder</span> My Drive
             </div>
         </aside>
+
+        <!-- Resizer Element -->
+        <div class="resizer" id="resizer"></div>
 
         <main style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
             <div class="toolbar">
@@ -582,6 +601,36 @@
     </div>
 
     <script>
+        // Sidebar Resizing Functionality
+        const sidebar = document.getElementById('sidebar');
+        const resizer = document.getElementById('resizer');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            resizer.classList.add('dragging');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerRect = sidebar.parentElement.getBoundingClientRect();
+            let newWidth = e.clientX - containerRect.left;
+            if (newWidth < 160) newWidth = 160;
+            if (newWidth > 500) newWidth = 500;
+            sidebar.style.width = `${newWidth}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                resizer.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
+        });
+
         let db;
         let currentUser = null;
         let isSignUp = false;
