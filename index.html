@@ -1,424 +1,970 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Unlimited Cloud Drive (UDS) - No Login</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Drive Clone</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --surface-color: #ffffff;
+            --text-color: #202124;
+            --text-secondary: #5f6368;
+            --border-color: #dadce0;
+            --hover-color: #f1f3f4;
+            --selected-bg: #e8f0fe;
+            --selected-border: #d2e3fc;
+            --primary: #1a73e8;
+            --primary-hover: #1b66c9;
+            --danger: #d93025;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --surface-color: #1e1e1e;
+                --text-color: #e8eaed;
+                --text-secondary: #9aa0a6;
+                --border-color: #3c4043;
+                --hover-color: #2d2f31;
+                --selected-bg: #174ea6;
+                --selected-border: #8ab4f8;
+                --primary: #8ab4f8;
+                --primary-hover: #aecbfa;
+                --danger: #f28b82;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Google Official Style Auth Overlay */
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .auth-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: 40px;
+            border-radius: 8px;
+            width: 450px;
+            max-width: 90%;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .google-logo {
+            font-size: 28px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auth-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .auth-form {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            text-align: left;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--surface-color);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .auth-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .auth-switch-link {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .auth-switch-link:hover {
+            text-decoration: underline;
+        }
+
+        /* App Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--surface-color);
+            height: 64px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-area span {
+            font-size: 22px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        aside {
+            width: 250px;
+            padding: 16px;
+            border-right: 1px solid var(--border-color);
+            background: var(--surface-color);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .upload-btn {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: 12px 24px;
+            border-radius: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-color);
+            width: 100%;
+            margin-bottom: 8px;
+            transition: box-shadow 0.2s, background 0.2s;
+        }
+
+        .upload-btn:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            background: var(--hover-color);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 16px;
+            border-radius: 0 20px 20px 0;
+            cursor: pointer;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .nav-item.active {
+            background: var(--selected-bg);
+            color: var(--primary);
+        }
+
+        .toolbar {
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .batch-actions {
+            display: none;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .batch-actions.visible {
+            display: flex;
+        }
+
+        .action-icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-icon-btn:hover {
+            background: var(--hover-color);
+            color: var(--text-color);
+        }
+
+        .files-container {
+            flex: 1;
+            padding: 0 24px 24px 24px;
+            overflow-y: auto;
+        }
+
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .file-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .file-card.selected {
+            background: var(--selected-bg);
+            border-color: var(--selected-border);
+        }
+
+        .file-card .checkbox {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface-color);
+        }
+
+        .file-card:hover .checkbox,
+        .file-card.selected .checkbox {
+            display: flex;
+        }
+
+        .file-card.selected .checkbox {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .file-preview-thumb {
+            height: 120px;
+            background: var(--hover-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .file-preview-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .file-preview-thumb .material-icons {
+            font-size: 48px;
+            color: var(--text-secondary);
+        }
+
+        .file-name {
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            max-height: 70vh;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-body img, .modal-body video {
+            max-width: 100%;
+            max-height: 60vh;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background: var(--surface-color);
+            color: var(--text-color);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .hidden-input {
+            display: none;
+        }
+
+        /* Safe Upload Progress Overlay */
+        #upload-progress-overlay {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 16px;
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 3000;
+        }
+        .upload-progress-bar-bg {
+            width: 100%;
+            background: var(--hover-color);
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .upload-progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.1s linear;
+        }
+    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans">
+<body>
 
-  <!-- HEADER -->
-  <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center justify-between shadow-md">
-    <div class="flex items-center space-x-3">
-      <i class="fa-solid fa-cloud-arrow-up text-indigo-500 text-2xl"></i>
-      <h1 class="text-xl font-bold tracking-wide">Unlimited Drive Storage</h1>
-      <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-xs px-2.5 py-0.5 rounded-full font-mono">0-Byte Quota</span>
-    </div>
-    <div class="flex items-center space-x-3">
-      <button onclick="openConfigModal()" class="bg-gray-700 hover:bg-gray-600 text-white font-medium px-4 py-2 rounded-lg text-sm transition flex items-center space-x-2 border border-gray-600">
-        <i class="fa-solid fa-key text-amber-400"></i>
-        <span>Access Token Setup</span>
-      </button>
-    </div>
-  </header>
+    <!-- Google-style Sign In / Sign Up Overlay -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <div class="google-logo">
+                <svg width="24" height="24" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.85 2.08-1.81 2.72v2.26h2.92c1.71-1.57 2.69-3.88 2.69-6.63z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.33-1.58-5.04-3.71H.95v2.33C2.43 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.96 10.71c-.18-.54-.28-1.12-.28-1.71s.1-1.17.28-1.71V4.96H.95C.34 6.18 0 7.55 0 9s.34 2.82.95 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.89 11.43 0 9 0 5.48 0 2.43 2.02.95 4.96l3.01 2.33c.71-2.13 2.7-3.71 5.04-3.71z"/></svg>
+                Google
+            </div>
+            <div class="auth-subtitle" id="auth-subtitle-text">Sign in to Google Drive</div>
 
-  <!-- MAIN CONTAINER -->
-  <main class="flex-1 max-w-5xl w-full mx-auto p-6 space-y-6">
+            <form class="auth-form" id="auth-form" onsubmit="handleAuthSubmit(event)">
+                <div class="form-group" id="group-email">
+                    <label>Email or phone</label>
+                    <input type="email" id="auth-email" required placeholder="name@gmail.com">
+                </div>
+                <div class="form-group" id="group-password" style="display:none;">
+                    <label>Enter your password</label>
+                    <input type="password" id="auth-password" placeholder="Password">
+                </div>
 
-    <!-- UPLOAD CARD -->
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-xl space-y-4">
-      <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-        <i class="fa-solid fa-file-arrow-up text-indigo-400"></i>
-        <span>Upload File (Any Type)</span>
-      </h2>
-
-      <div class="border-2 border-dashed border-gray-600 hover:border-indigo-500 rounded-xl p-8 text-center transition cursor-pointer relative bg-gray-900/50" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
-        <i class="fa-solid fa-cloud-arrow-up text-4xl text-gray-500 mb-2"></i>
-        <p id="fileNameDisplay" class="text-sm text-gray-300 font-medium">Click to select a file or drag & drop here</p>
-        <p class="text-xs text-gray-500 mt-1">Uploaded files are chunked into 0-byte quota Google Docs</p>
-      </div>
-
-      <div class="flex justify-end">
-        <button id="uploadBtn" onclick="startUpload()" disabled class="bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition flex items-center space-x-2">
-          <i class="fa-solid fa-upload"></i>
-          <span>Upload to Cloud</span>
-        </button>
-      </div>
-
-      <!-- PROGRESS BAR -->
-      <div id="progressContainer" class="hidden space-y-2 pt-2">
-        <div class="flex justify-between text-xs font-semibold">
-          <span id="statusText" class="text-indigo-400">Processing...</span>
-          <span id="percentText" class="text-gray-400">0%</span>
+                <div class="auth-buttons">
+                    <button type="button" class="auth-switch-link" id="switch-mode-btn" onclick="toggleAuthMode()">Create account</button>
+                    <button type="submit" class="btn btn-primary" id="auth-submit-btn">Next</button>
+                </div>
+            </form>
         </div>
-        <div class="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
-          <div id="progressBar" class="bg-indigo-500 h-full w-0 transition-all duration-200"></div>
+    </div>
+
+    <!-- Main App -->
+    <header>
+        <div class="logo-area">
+            <span class="material-icons" style="font-size: 36px; color: var(--primary);">add_to_photos</span>
+            <span>Drive</span>
         </div>
-      </div>
-    </div>
-
-    <!-- FILES LIST CARD -->
-    <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-xl space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-          <i class="fa-solid fa-folder-open text-indigo-400"></i>
-          <span>All Shared Files</span>
-        </h2>
-        <button onclick="fetchStoredFiles()" class="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5">
-          <i class="fa-solid fa-rotate"></i>
-          <span>Refresh List</span>
-        </button>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-gray-300">
-          <thead class="bg-gray-900/60 text-xs uppercase text-gray-400 border-b border-gray-700">
-            <tr>
-              <th class="py-3 px-4">File Name</th>
-              <th class="py-3 px-4">Folder ID</th>
-              <th class="py-3 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="filesTableBody" class="divide-y divide-gray-700/50">
-            <tr>
-              <td colspan="3" class="py-8 text-center text-gray-500">Loading files...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- PREVIEW MODAL -->
-  <div id="previewModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center hidden backdrop-blur-sm p-4">
-    <div class="bg-gray-800 border border-gray-700 w-full max-w-3xl rounded-2xl p-6 shadow-2xl space-y-4 max-h-[90vh] flex flex-col">
-      <div class="flex justify-between items-center border-b border-gray-700 pb-3">
-        <h3 id="previewTitle" class="text-lg font-bold text-white truncate">Preview</h3>
-        <button onclick="closePreviewModal()" class="text-gray-400 hover:text-white">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div id="previewBody" class="flex-1 overflow-auto flex items-center justify-center p-2 bg-gray-900 rounded-xl min-h-[300px]"></div>
-    </div>
-  </div>
-
-  <!-- API CONFIG MODAL -->
-  <div id="configModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center hidden backdrop-blur-sm">
-    <div class="bg-gray-800 border border-gray-700 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-gray-700 pb-3">
-        <h3 class="text-lg font-bold text-white">Google Drive Token Setup</h3>
-        <button onclick="closeConfigModal()" class="text-gray-400 hover:text-white">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs font-bold text-gray-300 uppercase">Bearer Access Token (ya29...)</label>
-          <input type="password" id="apiKeyInput" placeholder="Paste Access Token (starts with ya29.)" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 mt-1">
+        <div class="user-profile">
+            <span id="user-display-email"></span>
+            <div class="user-avatar" id="user-avatar-initial" onclick="logout()" title="Click to Sign Out">U</div>
         </div>
-        <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-lg text-xs text-amber-300 leading-relaxed">
-          <strong>Important:</strong> Simple API Keys (<code>AIza...</code>) are blocked by Google for uploading files. You must use an <strong>Access Token</strong> starting with <code>ya29.</code> from OAuth Playground.
-        </div>
-      </div>
-      <div class="flex justify-end pt-2">
-        <button onclick="saveConfig()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition w-full">
-          Save Settings
-        </button>
-      </div>
+    </header>
+
+    <div class="main-container">
+        <aside>
+            <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+                <span class="material-icons">add</span> Upload Files
+            </button>
+            <button class="upload-btn" onclick="document.getElementById('folder-input').click()">
+                <span class="material-icons">create_new_folder</span> Add folder
+            </button>
+
+            <!-- Hidden inputs -->
+            <input type="file" id="file-input" class="hidden-input" multiple onchange="handleFileUpload(event)">
+            <input type="file" id="folder-input" class="hidden-input" webkitdirectory directory multiple onchange="handleFileUpload(event)">
+
+            <div class="nav-item active">
+                <span class="material-icons">folder</span> My Drive
+            </div>
+        </aside>
+
+        <main style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+            <div class="toolbar">
+                <h2>My Drive</h2>
+                <div class="batch-actions" id="batch-actions">
+                    <button class="action-icon-btn" onclick="shareSelected()" title="Share">
+                        <span class="material-icons">share</span>
+                    </button>
+                    <button class="action-icon-btn" onclick="downloadSelected()" title="Download">
+                        <span class="material-icons">download</span>
+                    </button>
+                    <button class="action-icon-btn" onclick="deleteSelected()" title="Remove">
+                        <span class="material-icons">delete</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="files-container">
+                <div class="files-grid" id="files-grid"></div>
+            </div>
+        </main>
     </div>
-  </div>
 
-  <script>
-    let API_KEY = localStorage.getItem("uds_api_key") || "AIzaSyC9xpamQicbDiryainIguF8r6HdxQtE_jA";
-    const CHUNK_SIZE = 500 * 1024; // 500KB chunks for safety
-    let selectedFile = null;
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="preview-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="preview-title">File Preview</h3>
+                <button class="action-icon-btn" onclick="closeModal('preview-modal')">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="modal-body" id="preview-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="preview-download-btn">Download</button>
+            </div>
+        </div>
+    </div>
 
-    window.onload = () => {
-      document.getElementById("apiKeyInput").value = API_KEY;
-      fetchStoredFiles();
-    };
+    <!-- Safe Mass Upload Progress Box -->
+    <div id="upload-progress-overlay">
+        <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 500;">
+            <span id="upload-status-title">Uploading folder...</span>
+            <span id="upload-percent">0%</span>
+        </div>
+        <div class="upload-progress-bar-bg">
+            <div class="upload-progress-bar-fill" id="upload-progress-fill"></div>
+        </div>
+        <div style="font-size: 12px; color: var(--text-secondary);" id="upload-details">Processing safely...</div>
+    </div>
 
-    function openConfigModal() { document.getElementById("configModal").classList.remove("hidden"); }
-    function closeConfigModal() { document.getElementById("configModal").classList.add("hidden"); }
-    function closePreviewModal() { document.getElementById("previewModal").classList.add("hidden"); }
+    <script>
+        let db;
+        let currentUser = null;
+        let isSignUp = false;
+        let passwordStep = false;
+        let tempEmail = '';
 
-    function saveConfig() {
-      API_KEY = document.getElementById("apiKeyInput").value.trim();
-      localStorage.setItem("uds_api_key", API_KEY);
-      closeConfigModal();
-      fetchStoredFiles();
-    }
+        const request = indexedDB.open("GoogleDriveAccountsDB", 2);
 
-    function handleFileSelect(e) {
-      if (e.target.files.length > 0) {
-        selectedFile = e.target.files[0];
-        document.getElementById("fileNameDisplay").innerText = `${selectedFile.name} (${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)`;
-        document.getElementById("uploadBtn").disabled = false;
-      }
-    }
+        request.onerror = (event) => console.error("IndexedDB error:", event.target.error);
+        request.onsuccess = async (event) => {
+            db = event.target.result;
+            
+            if (navigator.storage && navigator.storage.persist) {
+                try {
+                    await navigator.storage.persist();
+                } catch (e) {
+                    console.warn("Storage persistence error:", e);
+                }
+            }
 
-    async function startUpload() {
-      if (!selectedFile) return;
+            checkSession();
+        };
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains("files")) {
+                db.createObjectStore("files", { keyPath: "id", autoIncrement: true });
+            }
+            if (!db.objectStoreNames.contains("users")) {
+                db.createObjectStore("users", { keyPath: "email" });
+            }
+        };
 
-      if (!API_KEY || !API_KEY.startsWith("ya29.")) {
-        alert("Upload Failed: You are using an API Key or empty token. Google Drive upload requires an Access Token starting with 'ya29.'. Open Token Setup and paste a valid token from OAuth Playground.");
-        openConfigModal();
-        return;
-      }
+        let selectedFileIds = new Set();
 
-      const progressContainer = document.getElementById("progressContainer");
-      const progressBar = document.getElementById("progressBar");
-      const statusText = document.getElementById("statusText");
-      const percentText = document.getElementById("percentText");
-
-      progressContainer.classList.remove("hidden");
-      document.getElementById("uploadBtn").disabled = true;
-
-      try {
-        statusText.innerText = "Reading file data...";
-        progressBar.style.width = "5%";
-        percentText.innerText = "5%";
-
-        const base64String = await fileToBase64(selectedFile);
-
-        statusText.innerText = "Creating target Google Drive folder...";
-        const folderId = await createDriveFolder(`UDS_${selectedFile.name}`);
-
-        const chunks = [];
-        for (let i = 0; i < base64String.length; i += CHUNK_SIZE) {
-          chunks.push(base64String.substring(i, i + CHUNK_SIZE));
+        function checkSession() {
+            const savedUser = localStorage.getItem("gdrive_current_user");
+            if (savedUser) {
+                currentUser = savedUser;
+                document.getElementById('user-display-email').innerText = currentUser;
+                document.getElementById('user-avatar-initial').innerText = currentUser.charAt(0).toUpperCase();
+                document.getElementById('auth-overlay').style.display = 'none';
+                loadFiles();
+            }
         }
 
-        for (let i = 0; i < chunks.length; i++) {
-          const chunkName = `part_${String(i).padStart(5, '0')}`;
-          statusText.innerText = `Uploading chunk ${i + 1} of ${chunks.length}...`;
-          await createGoogleDocChunk(folderId, chunkName, chunks[i]);
-
-          const pct = Math.round(((i + 1) / chunks.length) * 90) + 5;
-          progressBar.style.width = `${pct}%`;
-          percentText.innerText = `${pct}%`;
+        function toggleAuthMode() {
+            isSignUp = !isSignUp;
+            passwordStep = false;
+            document.getElementById('group-password').style.display = 'none';
+            document.getElementById('group-email').style.display = 'flex';
+            document.getElementById('auth-email').value = '';
+            document.getElementById('auth-password').value = '';
+            
+            if (isSignUp) {
+                document.getElementById('auth-subtitle-text').innerText = 'Create a Google Account';
+                document.getElementById('switch-mode-btn').innerText = 'Sign in instead';
+                document.getElementById('auth-submit-btn').innerText = 'Next';
+            } else {
+                document.getElementById('auth-subtitle-text').innerText = 'Sign in to Google Drive';
+                document.getElementById('switch-mode-btn').innerText = 'Create account';
+                document.getElementById('auth-submit-btn').innerText = 'Next';
+            }
         }
 
-        progressBar.style.width = "100%";
-        percentText.innerText = "100%";
-        statusText.innerText = "Upload complete!";
-        alert(`Successfully uploaded '${selectedFile.name}'!`);
-        fetchStoredFiles();
+        function handleAuthSubmit(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('auth-email').value.trim();
+            const passwordInput = document.getElementById('auth-password').value;
 
-      } catch (err) {
-        console.error("Upload error:", err);
-        alert("Upload Failed: " + err.message);
-        statusText.innerText = "Upload failed.";
-      } finally {
-        document.getElementById("uploadBtn").disabled = false;
-      }
-    }
+            if (!passwordStep) {
+                if (!emailInput || !emailInput.includes('@')) {
+                    alert('Please enter a valid email address.');
+                    return;
+                }
+                tempEmail = emailInput;
+                
+                const transaction = db.transaction(["users"], "readonly");
+                const store = transaction.objectStore("users");
+                const req = store.get(tempEmail);
 
-    function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
+                req.onsuccess = () => {
+                    const userRecord = req.result;
+                    if (isSignUp) {
+                        if (userRecord) {
+                            alert('An account with this email already exists. Please sign in.');
+                            isSignUp = false;
+                            toggleAuthMode();
+                            return;
+                        }
+                    } else {
+                        if (!userRecord) {
+                            alert('No account found with this email. Please sign up first.');
+                            isSignUp = true;
+                            toggleAuthMode();
+                            return;
+                        }
+                    }
 
-    async function createDriveFolder(folderName) {
-      const res = await fetch("https://www.googleapis.com/drive/v3/files", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ name: folderName, mimeType: "application/vnd.google-apps.folder" })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || "Folder creation failed");
-      return data.id;
-    }
+                    passwordStep = true;
+                    document.getElementById('group-email').style.display = 'none';
+                    document.getElementById('group-password').style.display = 'flex';
+                    document.getElementById('auth-password').focus();
+                    document.getElementById('auth-subtitle-text').innerText = `Welcome, ${tempEmail}`;
+                    document.getElementById('auth-submit-btn').innerText = isSignUp ? 'Sign Up' : 'Sign In';
+                    document.getElementById('switch-mode-btn').style.display = 'none';
+                };
+            } else {
+                if (!passwordInput) {
+                    alert('Please enter your password.');
+                    return;
+                }
 
-    async function createGoogleDocChunk(folderId, name, textContent) {
-      const metadata = {
-        name: name,
-        mimeType: "application/vnd.google-apps.document",
-        parents: [folderId]
-      };
+                const transaction = db.transaction(["users"], "readwrite");
+                const store = transaction.objectStore("users");
 
-      const boundary = "------UDSBoundaryString";
-      const delimiter = "\r\n--" + boundary + "\r\n";
-      const close_delim = "\r\n--" + boundary + "--";
-
-      const multipartRequestBody =
-        delimiter +
-        'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
-        JSON.stringify(metadata) +
-        delimiter +
-        'Content-Type: text/plain\r\n\r\n' +
-        textContent +
-        close_delim;
-
-      const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": `multipart/related; boundary=${boundary}`
-        },
-        body: multipartRequestBody
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error?.message || "Chunk upload failed");
-      }
-    }
-
-    async function fetchStoredFiles() {
-      const tbody = document.getElementById("filesTableBody");
-      tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-400"><i class="fa-solid fa-spinner animate-spin"></i> Fetching files...</td></tr>`;
-
-      if (!API_KEY) {
-        tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-amber-400">No Access Token configured. Click 'Access Token Setup' above to paste your token.</td></tr>`;
-        return;
-      }
-
-      try {
-        const query = encodeURIComponent("mimeType = 'application/vnd.google-apps.folder' and name contains 'UDS_' and trashed = false");
-        const headers = { "Authorization": `Bearer ${API_KEY}` };
-
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)`, { headers });
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.error?.message || "Failed to list files");
-
-        if (!data.files || data.files.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-gray-500">No files stored in drive yet.</td></tr>`;
-          return;
+                if (isSignUp) {
+                    store.add({ email: tempEmail, password: passwordInput });
+                    transaction.oncomplete = () => {
+                        completeLogin(tempEmail);
+                    };
+                } else {
+                    const req = store.get(tempEmail);
+                    req.onsuccess = () => {
+                        const userRecord = req.result;
+                        if (userRecord.password === passwordInput) {
+                            completeLogin(tempEmail);
+                        } else {
+                            alert('Incorrect password. Please try again.');
+                        }
+                    };
+                }
+            }
         }
 
-        tbody.innerHTML = "";
-        data.files.forEach(file => {
-          const cleanName = file.name.replace("UDS_", "");
-          const tr = document.createElement("tr");
-          tr.className = "hover:bg-gray-700/30 transition";
-          tr.innerHTML = `
-            <td class="py-3 px-4 font-medium text-white flex items-center space-x-2">
-              <i class="fa-solid fa-file-lines text-indigo-400"></i>
-              <span>${cleanName}</span>
-            </td>
-            <td class="py-3 px-4 font-mono text-xs text-gray-400">${file.id}</td>
-            <td class="py-3 px-4 text-right space-x-2">
-              <button onclick="previewFile('${file.id}', '${cleanName}')" class="bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-semibold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1">
-                <i class="fa-solid fa-eye"></i>
-                <span>Preview</span>
-              </button>
-              <button onclick="downloadFile('${file.id}', '${cleanName}')" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition inline-flex items-center space-x-1">
-                <i class="fa-solid fa-download"></i>
-                <span>Download</span>
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (err) {
-        console.error(err);
-        tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-red-400">Error loading files: ${err.message}</td></tr>`;
-      }
-    }
-
-    async function loadFileBlob(folderId) {
-      const query = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
-      const headers = { "Authorization": `Bearer ${API_KEY}` };
-
-      const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${query}&orderBy=name&fields=files(id,name)`, { headers });
-      const data = await res.json();
-      const files = data.files || [];
-
-      if (files.length === 0) throw new Error("No file chunks found inside folder.");
-
-      const b64Chunks = [];
-      for (let i = 0; i < files.length; i++) {
-        const exportUrl = `https://www.googleapis.com/drive/v3/files/${files[i].id}/export?mimeType=text/plain`;
-        const exportRes = await fetch(exportUrl, { headers });
-        let text = await exportRes.text();
-        text = text.replace(/^\uFEFF/, "");
-        b64Chunks.push(text.trim());
-      }
-
-      return base64ToBlob(b64Chunks.join(""));
-    }
-
-    async function downloadFile(folderId, fileName) {
-      try {
-        const blob = await loadFileBlob(folderId);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        alert("Download failed: " + err.message);
-      }
-    }
-
-    async function previewFile(folderId, fileName) {
-      const modal = document.getElementById("previewModal");
-      const title = document.getElementById("previewTitle");
-      const body = document.getElementById("previewBody");
-
-      title.innerText = `Previewing: ${fileName}`;
-      body.innerHTML = `<div class="text-indigo-400 font-medium flex items-center space-x-2"><i class="fa-solid fa-spinner animate-spin text-xl"></i><span>Reassembling file preview...</span></div>`;
-      modal.classList.remove("hidden");
-
-      try {
-        const blob = await loadFileBlob(folderId);
-        const objectUrl = URL.createObjectURL(blob);
-        const ext = fileName.split('.').pop().toLowerCase();
-
-        body.innerHTML = "";
-
-        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
-          body.innerHTML = `<img src="${objectUrl}" class="max-h-[60vh] max-w-full rounded-lg object-contain">`;
-        } else if (['mp4', 'webm', 'ogg'].includes(ext)) {
-          body.innerHTML = `<video controls src="${objectUrl}" class="max-h-[60vh] w-full rounded-lg"></video>`;
-        } else if (['mp3', 'wav', 'ogg'].includes(ext)) {
-          body.innerHTML = `<audio controls src="${objectUrl}" class="w-full p-4"></audio>`;
-        } else if (['pdf'].includes(ext)) {
-          body.innerHTML = `<iframe src="${objectUrl}" class="w-full h-[60vh] rounded-lg"></iframe>`;
-        } else if (['txt', 'js', 'html', 'css', 'json', 'py', 'md', 'cpp', 'c'].includes(ext)) {
-          const text = await blob.text();
-          body.innerHTML = `<pre class="text-xs text-gray-300 font-mono p-4 overflow-auto max-h-[60vh] w-full bg-gray-950 rounded-lg">${escapeHtml(text)}</pre>`;
-        } else {
-          body.innerHTML = `<div class="text-center py-8"><p class="text-gray-400">Direct preview not supported for .${ext} files.</p><button onclick="downloadFile('${folderId}', '${fileName}')" class="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-4 py-2 rounded-lg text-sm transition">Download File</button></div>`;
+        function completeLogin(email) {
+            currentUser = email;
+            localStorage.setItem("gdrive_current_user", currentUser);
+            document.getElementById('user-display-email').innerText = currentUser;
+            document.getElementById('user-avatar-initial').innerText = currentUser.charAt(0).toUpperCase();
+            document.getElementById('auth-overlay').style.display = 'none';
+            loadFiles();
         }
-      } catch (err) {
-        body.innerHTML = `<div class="text-red-400">Failed to render preview: ${err.message}</div>`;
-      }
-    }
 
-    function base64ToBlob(b64Data) {
-      const byteCharacters = atob(b64Data);
-      const byteArrays = [];
-      for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-        const slice = byteCharacters.slice(offset, offset + 512);
-        const byteNumbers = new Array(slice.length);
-        for (let i = 0; i < slice.length; i++) {
-          byteNumbers[i] = slice.charCodeAt(i);
+        function logout() {
+            if (confirm("Are you sure you want to sign out?")) {
+                localStorage.removeItem("gdrive_current_user");
+                location.reload();
+            }
         }
-        byteArrays.push(new Uint8Array(byteNumbers));
-      }
-      return new Blob(byteArrays, { type: "application/octet-stream" });
-    }
 
-    function escapeHtml(str) {
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-  </script>
+        // --- ROBUST FILE BUFFERING FOR PERSISTENT REFRESH SAFETY ---
+        async function handleFileUpload(event) {
+            const uploadedFiles = event.target.files;
+            if (!uploadedFiles || uploadedFiles.length === 0) return;
+
+            const overlay = document.getElementById('upload-progress-overlay');
+            const statusTitle = document.getElementById('upload-status-title');
+            const percentText = document.getElementById('upload-percent');
+            const progressFill = document.getElementById('upload-progress-fill');
+            const detailsText = document.getElementById('upload-details');
+
+            overlay.style.display = 'flex';
+            statusTitle.innerText = `Preparing ${uploadedFiles.length} files...`;
+
+            let totalBytes = 0;
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                totalBytes += uploadedFiles[i].size;
+            }
+
+            let processedBytes = 0;
+
+            for (let i = 0; i < uploadedFiles.length; i++) {
+                const file = uploadedFiles[i];
+                const displayName = file.webkitRelativePath || file.name;
+
+                statusTitle.innerText = `Uploading (${i + 1}/${uploadedFiles.length})`;
+                detailsText.innerText = displayName;
+
+                try {
+                    // Read file into an ArrayBuffer and convert to a standalone Blob 
+                    // so it doesn't lose its reference/handle upon page refresh.
+                    const arrayBuffer = await file.arrayBuffer();
+                    const cleanBlob = new Blob([arrayBuffer], { type: file.type });
+
+                    await new Promise((resolve, reject) => {
+                        const transaction = db.transaction(["files"], "readwrite");
+                        const store = transaction.objectStore("files");
+
+                        const fileRecord = {
+                            user: currentUser,
+                            name: displayName,
+                            type: file.type,
+                            size: file.size,
+                            data: cleanBlob,
+                            date: new Date().toISOString()
+                        };
+
+                        const req = store.add(fileRecord);
+                        req.onsuccess = () => resolve();
+                        req.onerror = (e) => reject(e.target.error);
+                    });
+                } catch (err) {
+                    console.error("Storage write error:", err);
+                    alert("Upload error or storage quota exceeded.");
+                    break;
+                }
+
+                processedBytes += file.size;
+                const currentPercent = Math.min(100, Math.round((processedBytes / totalBytes) * 100));
+
+                percentText.innerText = currentPercent + '%';
+                progressFill.style.width = currentPercent + '%';
+
+                await new Promise(r => setTimeout(r, 2));
+            }
+
+            statusTitle.innerText = "Upload Complete!";
+            detailsText.innerText = "All files safely saved.";
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                loadFiles();
+                event.target.value = '';
+            }, 1200);
+        }
+
+        function loadFiles() {
+            if (!db || !currentUser) return;
+            const transaction = db.transaction(["files"], "readonly");
+            const store = transaction.objectStore("files");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const filesGrid = document.getElementById('files-grid');
+                filesGrid.innerHTML = '';
+                const allFiles = request.result;
+                const userFiles = allFiles.filter(f => f.user === currentUser);
+
+                userFiles.forEach(file => {
+                    const card = document.createElement('div');
+                    card.className = `file-card ${selectedFileIds.has(file.id) ? 'selected' : ''}`;
+                    card.onclick = (e) => {
+                        if (e.target.closest('.checkbox')) return;
+                        toggleSelectFile(file.id, card);
+                    };
+                    card.ondblclick = () => previewFile(file);
+
+                    let thumbContent = `<span class="material-icons">insert_drive_file</span>`;
+                    if (file.type && file.type.startsWith('image/')) {
+                        const url = URL.createObjectURL(file.data);
+                        thumbContent = `<img src="${url}" alt="${file.name}">`;
+                    } else if (file.type && file.type.startsWith('video/')) {
+                        thumbContent = `<span class="material-icons">movie</span>`;
+                    } else if (file.type && file.type.includes('pdf')) {
+                        thumbContent = `<span class="material-icons">picture_as_pdf</span>`;
+                    } else if (file.name.includes('/')) {
+                        thumbContent = `<span class="material-icons" style="color: #f4b400;">folder</span>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="checkbox" onclick="event.stopPropagation(); toggleSelectFile(${file.id}, this.parentElement)">
+                            <span class="material-icons" style="font-size: 16px;">check</span>
+                        </div>
+                        <div class="file-preview-thumb">${thumbContent}</div>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span class="file-name" title="${file.name}">${file.name}</span>
+                        </div>
+                    `;
+                    filesGrid.appendChild(card);
+                });
+            };
+        }
+
+        function toggleSelectFile(id, cardElement) {
+            if (selectedFileIds.has(id)) {
+                selectedFileIds.delete(id);
+                cardElement.classList.remove('selected');
+            } else {
+                selectedFileIds.add(id);
+                cardElement.classList.add('selected');
+            }
+
+            const batchActions = document.getElementById('batch-actions');
+            if (selectedFileIds.size > 0) {
+                batchActions.classList.add('visible');
+            } else {
+                batchActions.classList.remove('visible');
+            }
+        }
+
+        function previewFile(file) {
+            document.getElementById('preview-title').innerText = file.name;
+            const body = document.getElementById('preview-body');
+            body.innerHTML = '';
+
+            const url = URL.createObjectURL(file.data);
+            if (file.type && file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = url;
+                body.appendChild(img);
+            } else if (file.type && file.type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.src = url;
+                video.controls = true;
+                body.appendChild(video);
+            } else if (file.type && file.type.includes('pdf')) {
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.style.width = '100%';
+                iframe.style.height = '60vh';
+                body.appendChild(iframe);
+            } else {
+                const p = document.createElement('p');
+                p.innerText = `Preview not available for this format. You can download it directly.`;
+                body.appendChild(p);
+            }
+
+            document.getElementById('preview-download-btn').onclick = () => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name.split('/').pop();
+                a.click();
+            };
+
+            document.getElementById('preview-modal').classList.add('active');
+        }
+
+        function deleteSelected() {
+            if (selectedFileIds.size === 0) return;
+            
+            if (confirm("Are you sure to remove this file?")) {
+                const transaction = db.transaction(["files"], "readwrite");
+                const store = transaction.objectStore("files");
+
+                selectedFileIds.forEach(id => {
+                    store.delete(id);
+                });
+
+                transaction.oncomplete = () => {
+                    selectedFileIds.clear();
+                    document.getElementById('batch-actions').classList.remove('visible');
+                    loadFiles();
+                };
+            }
+        }
+
+        function downloadSelected() {
+            const transaction = db.transaction(["files"], "readonly");
+            const store = transaction.objectStore("files");
+
+            selectedFileIds.forEach(id => {
+                const request = store.get(id);
+                request.onsuccess = () => {
+                    const file = request.result;
+                    if (file) {
+                        const url = URL.createObjectURL(file.data);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = file.name.split('/').pop();
+                        a.click();
+                    }
+                };
+            });
+        }
+
+        function shareSelected() {
+            if (selectedFileIds.size === 0) return;
+            const firstId = Array.from(selectedFileIds)[0];
+            const transaction = db.transaction(["files"], "readonly");
+            const store = transaction.objectStore("files");
+            const request = store.get(firstId);
+
+            request.onsuccess = () => {
+                const file = request.result;
+                if (file) {
+                    alert(`Share link generated for: ${file.name}\n(${window.location.href.split('#')[0]}?file=${encodeURIComponent(file.name)})`);
+                }
+            };
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+    </script>
 </body>
 </html>
