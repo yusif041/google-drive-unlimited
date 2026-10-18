@@ -579,6 +579,9 @@
             <div class="nav-item active">
                 <span class="material-icons">folder</span> My Drive
             </div>
+            <div class="nav-item" onclick="openAccountDatabaseModal()">
+                <span class="material-icons">storage</span> Account Database
+            </div>
         </aside>
 
         <!-- Resizer Element -->
@@ -618,6 +621,39 @@
             <div class="modal-body" id="preview-body"></div>
             <div class="modal-footer">
                 <button class="btn btn-primary" id="preview-download-btn">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Database Modal -->
+    <div class="modal-overlay" id="account-db-modal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3>Registered Account Database</h3>
+                <button class="action-icon-btn" onclick="closeModal('account-db-modal')">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div class="modal-body" style="flex-direction: column; align-items: stretch; gap: 12px; max-height: 50vh; display: flex;">
+                <input type="text" id="account-search" placeholder="Search accounts in database..." oninput="filterAccountDatabase(this.value)" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--surface-color); color: var(--text-color); font-size: 14px; width: 100%;">
+                <div style="overflow-y: auto; max-height: 40vh;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
+                                <th style="padding: 8px;">Email</th>
+                                <th style="padding: 8px;">Password</th>
+                                <th style="padding: 8px; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="account-db-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="exportAccountDatabase()">Export JSON</button>
+                <button class="btn btn-primary" onclick="closeModal('account-db-modal')">Close</button>
             </div>
         </div>
     </div>
@@ -739,6 +775,11 @@
             const emailInput = document.getElementById('auth-email').value.trim();
             const passwordInput = document.getElementById('auth-password').value;
 
+            if (!db) {
+                alert('Database is still initializing. Please wait a second and try again.');
+                return;
+            }
+
             if (!passwordStep) {
                 if (!emailInput || !emailInput.includes('@')) {
                     alert('Please enter a valid email address.');
@@ -786,15 +827,18 @@
                 const store = transaction.objectStore("users");
 
                 if (isSignUp) {
-                    store.add({ email: tempEmail, password: passwordInput });
-                    transaction.oncomplete = () => {
+                    const putReq = store.put({ email: tempEmail, password: passwordInput });
+                    putReq.onsuccess = () => {
                         completeLogin(tempEmail);
+                    };
+                    putReq.onerror = (e) => {
+                        alert('Error saving account: ' + e.target.error);
                     };
                 } else {
                     const req = store.get(tempEmail);
                     req.onsuccess = () => {
                         const userRecord = req.result;
-                        if (userRecord.password === passwordInput) {
+                        if (userRecord && userRecord.password === passwordInput) {
                             completeLogin(tempEmail);
                         } else {
                             alert('Incorrect password. Please try again.');
@@ -1044,6 +1088,82 @@
                 if (file) {
                     alert(`Share link generated for: ${file.name}\n(${window.location.href.split('#')[0]}?file=${encodeURIComponent(file.name)})`);
                 }
+            };
+        }
+
+        function openAccountDatabaseModal() {
+            loadAccountDatabaseTable();
+            document.getElementById('account-db-modal').classList.add('active');
+        }
+
+        function loadAccountDatabaseTable(filter = '') {
+            if (!db) return;
+            const transaction = db.transaction(["users"], "readonly");
+            const store = transaction.objectStore("users");
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                const tbody = document.getElementById('account-db-tbody');
+                tbody.innerHTML = '';
+                const users = req.result;
+                const filtered = users.filter(u => u.email.toLowerCase().includes(filter.toLowerCase()));
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--text-secondary);">No accounts found in database.</td></tr>`;
+                    return;
+                }
+
+                filtered.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--border-color)';
+                    tr.innerHTML = `
+                        <td style="padding: 10px; color: var(--text-color);">${user.email}</td>
+                        <td style="padding: 10px; color: var(--text-secondary); font-family: monospace;">${user.password}</td>
+                        <td style="padding: 10px; text-align: right;">
+                            <button class="action-icon-btn" onclick="copyAccountCreds('${user.email}', '${user.password}')" title="Copy Credentials" style="display: inline-flex;"><span class="material-icons" style="font-size: 18px;">content_copy</span></button>
+                            <button class="action-icon-btn" onclick="deleteAccountRecord('${user.email}')" title="Delete Account" style="display: inline-flex; color: var(--danger);"><span class="material-icons" style="font-size: 18px;">delete</span></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            };
+        }
+
+        function filterAccountDatabase(query) {
+            loadAccountDatabaseTable(query);
+        }
+
+        function copyAccountCreds(email, password) {
+            navigator.clipboard.writeText(`Email: ${email}\nPassword: ${password}`).then(() => {
+                alert('Account credentials copied to clipboard!');
+            });
+        }
+
+        function deleteAccountRecord(email) {
+            if (confirm(`Are you sure you want to delete account ${email}?`)) {
+                const transaction = db.transaction(["users"], "readwrite");
+                const store = transaction.objectStore("users");
+                store.delete(email);
+                transaction.oncomplete = () => {
+                    loadAccountDatabaseTable();
+                    if (currentUser === email) {
+                        localStorage.removeItem("gdrive_current_user");
+                        location.reload();
+                    }
+                };
+            }
+        }
+
+        function exportAccountDatabase() {
+            const transaction = db.transaction(["users"], "readonly");
+            const store = transaction.objectStore("users");
+            const req = store.getAll();
+            req.onsuccess = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(req.result, null, 2));
+                const dlAnchorElem = document.createElement('a');
+                dlAnchorElem.setAttribute("href", dataStr);
+                dlAnchorElem.setAttribute("download", "google_drive_accounts_backup.json");
+                dlAnchorElem.click();
             };
         }
 
