@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Drive Clone</title>
+    <title>Google Drive Clone - Cloud Database</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -53,7 +53,6 @@
             overflow: hidden;
         }
 
-        /* Google Official Style Auth Overlay */
         #auth-overlay {
             position: fixed;
             top: 0;
@@ -150,7 +149,6 @@
             text-decoration: underline;
         }
 
-        /* App Header */
         header {
             display: flex;
             align-items: center;
@@ -167,7 +165,6 @@
             gap: 12px;
         }
 
-        /* Toggle Sidebar Button */
         .toggle-sidebar-btn {
             background: none;
             border: none;
@@ -231,13 +228,11 @@
             transition: transform 0.25s ease, margin-left 0.25s ease;
         }
 
-        /* Collapsed Sidebar Class */
         aside.hidden {
             margin-left: -250px;
             display: none !important;
         }
 
-        /* Draggable Resizer Bar */
         .resizer {
             width: 6px;
             cursor: col-resize;
@@ -487,7 +482,6 @@
             display: none;
         }
 
-        /* Safe Upload Progress Overlay */
         #upload-progress-overlay {
             position: fixed;
             bottom: 20px;
@@ -520,7 +514,7 @@
 </head>
 <body>
 
-    <!-- Google-style Sign In / Sign Up Overlay -->
+    <!-- Auth Overlay -->
     <div id="auth-overlay">
         <div class="auth-card">
             <div class="google-logo">
@@ -529,7 +523,7 @@
             </div>
             <div class="auth-subtitle" id="auth-subtitle-text">Sign in to Google Drive</div>
 
-            <form class="auth-form" id="auth-form" onsubmit="handleAuthSubmit(event)">
+            <form class="auth-form" id="auth-form">
                 <div class="form-group" id="group-email">
                     <label>Email or phone</label>
                     <input type="email" id="auth-email" required placeholder="name@gmail.com">
@@ -540,7 +534,7 @@
                 </div>
 
                 <div class="auth-buttons">
-                    <button type="button" class="auth-switch-link" id="switch-mode-btn" onclick="toggleAuthMode()">Create account</button>
+                    <button type="button" class="auth-switch-link" id="switch-mode-btn">Create account</button>
                     <button type="submit" class="btn btn-primary" id="auth-submit-btn">Next</button>
                 </div>
             </form>
@@ -550,8 +544,7 @@
     <!-- Main App -->
     <header>
         <div class="logo-area">
-            <!-- Left-side Button to Hide / Show Sidebar -->
-            <button class="toggle-sidebar-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
+            <button class="toggle-sidebar-btn" id="toggle-sidebar-btn" title="Toggle Sidebar">
                 <span class="material-icons">menu</span>
             </button>
             <span class="material-icons" style="font-size: 36px; color: var(--primary);">add_to_photos</span>
@@ -559,45 +552,43 @@
         </div>
         <div class="user-profile">
             <span id="user-display-email"></span>
-            <div class="user-avatar" id="user-avatar-initial" onclick="logout()" title="Click to Sign Out">U</div>
+            <div class="user-avatar" id="user-avatar-initial" title="Click to Sign Out">U</div>
         </div>
     </header>
 
     <div class="main-container">
         <aside id="sidebar">
-            <button class="upload-btn" onclick="document.getElementById('file-input').click()">
+            <button class="upload-btn" id="upload-files-btn">
                 <span class="material-icons">add</span> Upload Files
             </button>
-            <button class="upload-btn" onclick="document.getElementById('folder-input').click()">
+            <button class="upload-btn" id="upload-folder-btn">
                 <span class="material-icons">create_new_folder</span> Add folder
             </button>
 
-            <!-- Hidden inputs -->
-            <input type="file" id="file-input" class="hidden-input" multiple="multiple" accept="*/*" onchange="handleFileUpload(event)">
-            <input type="file" id="folder-input" class="hidden-input" webkitdirectory directory multiple="multiple" accept="*/*" onchange="handleFileUpload(event)">
+            <input type="file" id="file-input" class="hidden-input" multiple="multiple" accept="*/*">
+            <input type="file" id="folder-input" class="hidden-input" webkitdirectory directory multiple="multiple" accept="*/*">
 
             <div class="nav-item active">
                 <span class="material-icons">folder</span> My Drive
             </div>
-            <div class="nav-item" onclick="openAccountDatabaseModal()">
+            <div class="nav-item" id="open-account-db-btn">
                 <span class="material-icons">storage</span> Account Database
             </div>
         </aside>
 
-        <!-- Resizer Element -->
         <div class="resizer" id="resizer"></div>
 
         <main style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
             <div class="toolbar">
                 <h2>My Drive</h2>
                 <div class="batch-actions" id="batch-actions">
-                    <button class="action-icon-btn" onclick="shareSelected()" title="Share">
+                    <button class="action-icon-btn" id="share-selected-btn" title="Share">
                         <span class="material-icons">share</span>
                     </button>
-                    <button class="action-icon-btn" onclick="downloadSelected()" title="Download">
+                    <button class="action-icon-btn" id="download-selected-btn" title="Download">
                         <span class="material-icons">download</span>
                     </button>
-                    <button class="action-icon-btn" onclick="deleteSelected()" title="Remove">
+                    <button class="action-icon-btn" id="delete-selected-btn" title="Remove">
                         <span class="material-icons">delete</span>
                     </button>
                 </div>
@@ -614,7 +605,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 id="preview-title">File Preview</h3>
-                <button class="action-icon-btn" onclick="closeModal('preview-modal')">
+                <button class="action-icon-btn" id="close-preview-modal-btn">
                     <span class="material-icons">close</span>
                 </button>
             </div>
@@ -629,19 +620,19 @@
     <div class="modal-overlay" id="account-db-modal">
         <div class="modal" style="max-width: 700px;">
             <div class="modal-header">
-                <h3>Registered Account Database</h3>
-                <button class="action-icon-btn" onclick="closeModal('account-db-modal')">
+                <h3>Cloud Account Database</h3>
+                <button class="action-icon-btn" id="close-account-db-btn">
                     <span class="material-icons">close</span>
                 </button>
             </div>
             <div class="modal-body" style="flex-direction: column; align-items: stretch; gap: 12px; max-height: 50vh; display: flex;">
-                <input type="text" id="account-search" placeholder="Search accounts in database..." oninput="filterAccountDatabase(this.value)" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--surface-color); color: var(--text-color); font-size: 14px; width: 100%;">
-                <div style="overflow-y: auto; max-height: 40vh;">
+                <input type="text" id="account-search" placeholder="Search accounts in cloud database..." style="padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--surface-color); color: var(--text-color); font-size: 14px; width: 100%;">
+                <div style="overflow-y: auto; max-height: 35vh;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
                         <thead>
                             <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-secondary);">
                                 <th style="padding: 8px;">Email</th>
-                                <th style="padding: 8px;">Password</th>
+                                <th style="padding: 8px;">Status</th>
                                 <th style="padding: 8px; text-align: right;">Actions</th>
                             </tr>
                         </thead>
@@ -651,9 +642,11 @@
                     </table>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn" onclick="exportAccountDatabase()">Export JSON</button>
-                <button class="btn btn-primary" onclick="closeModal('account-db-modal')">Close</button>
+            <div class="modal-footer" style="justify-content: space-between;">
+                <div>
+                    <button class="btn" id="export-accounts-btn" title="Export accounts backup">Export JSON</button>
+                </div>
+                <button class="btn btn-primary" id="close-account-db-footer-btn">Close</button>
             </div>
         </div>
     </div>
@@ -670,18 +663,70 @@
         <div style="font-size: 12px; color: var(--text-secondary);" id="upload-details">Processing safely...</div>
     </div>
 
-    <script>
-        // Sidebar Resizing & Toggle Functionality
+    <!-- Firebase & App Script Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDGRDPrS0f-y93EFsJXx9qhU6ToL1Ue-uc",
+            authDomain: "drive-free-b28cc.firebaseapp.com",
+            projectId: "drive-free-b28cc",
+            storageBucket: "drive-free-b28cc.firebasestorage.app",
+            messagingSenderId: "830341833641",
+            appId: "1:830341833641:web:43e7e1b5456fda5e189ab8",
+            measurementId: "G-JHZDZ3V3RV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let isSignUp = false;
+        let passwordStep = false;
+        let tempEmail = '';
+        let selectedFileIds = new Set();
+        let localFilesDb = null; // IndexedDB for local file previews
+
+        // Initialize local IndexedDB for file caching
+        const idbRequest = indexedDB.open("GoogleDriveFilesDB", 2);
+        idbRequest.onsuccess = (event) => {
+            localFilesDb = event.target.result;
+            checkSession();
+        };
+        idbRequest.onupgradeneeded = (event) => {
+            const idb = event.target.result;
+            if (!idb.objectStoreNames.contains("files")) {
+                idb.createObjectStore("files", { keyPath: "id", autoIncrement: true });
+            }
+        };
+
+        // Auth State Observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user.email;
+                document.getElementById('user-display-email').innerText = currentUser;
+                document.getElementById('user-avatar-initial').innerText = currentUser.charAt(0).toUpperCase();
+                document.getElementById('auth-overlay').style.display = 'none';
+                loadFiles();
+            } else {
+                document.getElementById('auth-overlay').style.display = 'flex';
+            }
+        });
+
+        // Sidebar Resizing & Toggle
         const sidebar = document.getElementById('sidebar');
         const resizer = document.getElementById('resizer');
         let isResizing = false;
 
-        function toggleSidebar() {
+        document.getElementById('toggle-sidebar-btn').onclick = () => {
             sidebar.classList.toggle('hidden');
             resizer.classList.toggle('hidden');
-        }
+        };
 
-        resizer.addEventListener('mousedown', (e) => {
+        resizer.addEventListener('mousedown', () => {
             isResizing = true;
             resizer.classList.add('dragging');
             document.body.style.cursor = 'col-resize';
@@ -706,52 +751,9 @@
             }
         });
 
-        let db;
-        let currentUser = null;
-        let isSignUp = false;
-        let passwordStep = false;
-        let tempEmail = '';
-
-        const request = indexedDB.open("GoogleDriveAccountsDB", 2);
-
-        request.onerror = (event) => console.error("IndexedDB error:", event.target.error);
-        request.onsuccess = async (event) => {
-            db = event.target.result;
-            
-            if (navigator.storage && navigator.storage.persist) {
-                try {
-                    await navigator.storage.persist();
-                } catch (e) {
-                    console.warn("Storage persistence error:", e);
-                }
-            }
-
-            checkSession();
-        };
-        request.onupgradeneeded = (event) => {
-            db = event.target.result;
-            if (!db.objectStoreNames.contains("files")) {
-                db.createObjectStore("files", { keyPath: "id", autoIncrement: true });
-            }
-            if (!db.objectStoreNames.contains("users")) {
-                db.createObjectStore("users", { keyPath: "email" });
-            }
-        };
-
-        let selectedFileIds = new Set();
-
-        function checkSession() {
-            const savedUser = localStorage.getItem("gdrive_current_user");
-            if (savedUser) {
-                currentUser = savedUser;
-                document.getElementById('user-display-email').innerText = currentUser;
-                document.getElementById('user-avatar-initial').innerText = currentUser.charAt(0).toUpperCase();
-                document.getElementById('auth-overlay').style.display = 'none';
-                loadFiles();
-            }
-        }
-
-        function toggleAuthMode() {
+        // Auth Toggle Mode
+        const switchModeBtn = document.getElementById('switch-mode-btn');
+        switchModeBtn.onclick = () => {
             isSignUp = !isSignUp;
             passwordStep = false;
             document.getElementById('group-password').style.display = 'none';
@@ -761,24 +763,20 @@
             
             if (isSignUp) {
                 document.getElementById('auth-subtitle-text').innerText = 'Create a Google Account';
-                document.getElementById('switch-mode-btn').innerText = 'Sign in instead';
+                switchModeBtn.innerText = 'Sign in instead';
                 document.getElementById('auth-submit-btn').innerText = 'Next';
             } else {
                 document.getElementById('auth-subtitle-text').innerText = 'Sign in to Google Drive';
-                document.getElementById('switch-mode-btn').innerText = 'Create account';
+                switchModeBtn.innerText = 'Create account';
                 document.getElementById('auth-submit-btn').innerText = 'Next';
             }
-        }
+        };
 
-        function handleAuthSubmit(event) {
+        // Form Submit for Auth
+        document.getElementById('auth-form').onsubmit = async (event) => {
             event.preventDefault();
             const emailInput = document.getElementById('auth-email').value.trim();
             const passwordInput = document.getElementById('auth-password').value;
-
-            if (!db) {
-                alert('Database is still initializing. Please wait a second and try again.');
-                return;
-            }
 
             if (!passwordStep) {
                 if (!emailInput || !emailInput.includes('@')) {
@@ -786,87 +784,55 @@
                     return;
                 }
                 tempEmail = emailInput;
-                
-                const transaction = db.transaction(["users"], "readonly");
-                const store = transaction.objectStore("users");
-                const req = store.get(tempEmail);
-
-                req.onsuccess = () => {
-                    const userRecord = req.result;
-                    if (isSignUp) {
-                        if (userRecord) {
-                            alert('An account with this email already exists. Please sign in.');
-                            isSignUp = false;
-                            toggleAuthMode();
-                            return;
-                        }
-                    } else {
-                        if (!userRecord) {
-                            alert('No account found with this email. Please sign up first.');
-                            isSignUp = true;
-                            toggleAuthMode();
-                            return;
-                        }
-                    }
-
-                    passwordStep = true;
-                    document.getElementById('group-email').style.display = 'none';
-                    document.getElementById('group-password').style.display = 'flex';
-                    document.getElementById('auth-password').focus();
-                    document.getElementById('auth-subtitle-text').innerText = `Welcome, ${tempEmail}`;
-                    document.getElementById('auth-submit-btn').innerText = isSignUp ? 'Sign Up' : 'Sign In';
-                    document.getElementById('switch-mode-btn').style.display = 'none';
-                };
+                passwordStep = true;
+                document.getElementById('group-email').style.display = 'none';
+                document.getElementById('group-password').style.display = 'flex';
+                document.getElementById('auth-password').focus();
+                document.getElementById('auth-subtitle-text').innerText = `Welcome, ${tempEmail}`;
+                document.getElementById('auth-submit-btn').innerText = isSignUp ? 'Sign Up' : 'Sign In';
+                switchModeBtn.style.display = 'none';
             } else {
                 if (!passwordInput) {
                     alert('Please enter your password.');
                     return;
                 }
 
-                const transaction = db.transaction(["users"], "readwrite");
-                const store = transaction.objectStore("users");
-
-                if (isSignUp) {
-                    const putReq = store.put({ email: tempEmail, password: passwordInput });
-                    putReq.onsuccess = () => {
-                        completeLogin(tempEmail);
-                    };
-                    putReq.onerror = (e) => {
-                        alert('Error saving account: ' + e.target.error);
-                    };
-                } else {
-                    const req = store.get(tempEmail);
-                    req.onsuccess = () => {
-                        const userRecord = req.result;
-                        if (userRecord && userRecord.password === passwordInput) {
-                            completeLogin(tempEmail);
-                        } else {
-                            alert('Incorrect password. Please try again.');
-                        }
-                    };
+                try {
+                    if (isSignUp) {
+                        await createUserWithEmailAndPassword(auth, tempEmail, passwordInput);
+                        // Save account details into Firestore cloud database
+                        await setDoc(doc(db, "users", tempEmail), {
+                            email: tempEmail,
+                            createdAt: new Date().toISOString()
+                        });
+                        alert('Cloud account created successfully!');
+                    } else {
+                        await signInWithEmailAndPassword(auth, tempEmail, passwordInput);
+                    }
+                } catch (error) {
+                    alert('Authentication Error: ' + error.message);
                 }
             }
-        }
+        };
 
-        function completeLogin(email) {
-            currentUser = email;
-            localStorage.setItem("gdrive_current_user", currentUser);
-            document.getElementById('user-display-email').innerText = currentUser;
-            document.getElementById('user-avatar-initial').innerText = currentUser.charAt(0).toUpperCase();
-            document.getElementById('auth-overlay').style.display = 'none';
-            loadFiles();
-        }
-
-        function logout() {
+        // Logout
+        document.getElementById('user-avatar-initial').onclick = () => {
             if (confirm("Are you sure you want to sign out?")) {
-                localStorage.removeItem("gdrive_current_user");
-                location.reload();
+                signOut(auth).then(() => {
+                    location.reload();
+                });
             }
-        }
+        };
+
+        // File Uploads
+        document.getElementById('upload-files-btn').onclick = () => document.getElementById('file-input').click();
+        document.getElementById('upload-folder-btn').onclick = () => document.getElementById('folder-input').click();
+        document.getElementById('file-input').onchange = handleFileUpload;
+        document.getElementById('folder-input').onchange = handleFileUpload;
 
         async function handleFileUpload(event) {
             const uploadedFiles = event.target.files;
-            if (!uploadedFiles || uploadedFiles.length === 0) return;
+            if (!uploadedFiles || uploadedFiles.length === 0 || !localFilesDb) return;
 
             const overlay = document.getElementById('upload-progress-overlay');
             const statusTitle = document.getElementById('upload-status-title');
@@ -896,7 +862,7 @@
                     const cleanBlob = new Blob([arrayBuffer], { type: file.type });
 
                     await new Promise((resolve, reject) => {
-                        const transaction = db.transaction(["files"], "readwrite");
+                        const transaction = localFilesDb.transaction(["files"], "readwrite");
                         const store = transaction.objectStore("files");
 
                         const fileRecord = {
@@ -914,7 +880,6 @@
                     });
                 } catch (err) {
                     console.error("Storage write error:", err);
-                    alert("Upload error or storage quota exceeded.");
                     break;
                 }
 
@@ -938,8 +903,8 @@
         }
 
         function loadFiles() {
-            if (!db || !currentUser) return;
-            const transaction = db.transaction(["files"], "readonly");
+            if (!localFilesDb || !currentUser) return;
+            const transaction = localFilesDb.transaction(["files"], "readonly");
             const store = transaction.objectStore("files");
             const request = store.getAll();
 
@@ -971,7 +936,7 @@
                     }
 
                     card.innerHTML = `
-                        <div class="checkbox" onclick="event.stopPropagation(); toggleSelectFile(${file.id}, this.parentElement)">
+                        <div class="checkbox">
                             <span class="material-icons" style="font-size: 16px;">check</span>
                         </div>
                         <div class="file-preview-thumb">${thumbContent}</div>
@@ -1038,16 +1003,12 @@
             document.getElementById('preview-modal').classList.add('active');
         }
 
-        function deleteSelected() {
+        document.getElementById('delete-selected-btn').onclick = () => {
             if (selectedFileIds.size === 0) return;
-            
             if (confirm("Are you sure to remove this file?")) {
-                const transaction = db.transaction(["files"], "readwrite");
+                const transaction = localFilesDb.transaction(["files"], "readwrite");
                 const store = transaction.objectStore("files");
-
-                selectedFileIds.forEach(id => {
-                    store.delete(id);
-                });
+                selectedFileIds.forEach(id => store.delete(id));
 
                 transaction.oncomplete = () => {
                     selectedFileIds.clear();
@@ -1055,10 +1016,10 @@
                     loadFiles();
                 };
             }
-        }
+        };
 
-        function downloadSelected() {
-            const transaction = db.transaction(["files"], "readonly");
+        document.getElementById('download-selected-btn').onclick = () => {
+            const transaction = localFilesDb.transaction(["files"], "readonly");
             const store = transaction.objectStore("files");
 
             selectedFileIds.forEach(id => {
@@ -1074,102 +1035,84 @@
                     }
                 };
             });
-        }
+        };
 
-        function shareSelected() {
+        document.getElementById('share-selected-btn').onclick = () => {
             if (selectedFileIds.size === 0) return;
             const firstId = Array.from(selectedFileIds)[0];
-            const transaction = db.transaction(["files"], "readonly");
+            const transaction = localFilesDb.transaction(["files"], "readonly");
             const store = transaction.objectStore("files");
             const request = store.get(firstId);
 
             request.onsuccess = () => {
                 const file = request.result;
                 if (file) {
-                    alert(`Share link generated for: ${file.name}\n(${window.location.href.split('#')[0]}?file=${encodeURIComponent(file.name)})`);
+                    alert(`Share link generated for: ${file.name}`);
                 }
             };
-        }
+        };
 
-        function openAccountDatabaseModal() {
-            loadAccountDatabaseTable();
+        // Account Database Modal Controls
+        document.getElementById('open-account-db-btn').onclick = () => {
+            loadCloudAccountDatabaseTable();
             document.getElementById('account-db-modal').classList.add('active');
-        }
+        };
 
-        function loadAccountDatabaseTable(filter = '') {
-            if (!db) return;
-            const transaction = db.transaction(["users"], "readonly");
-            const store = transaction.objectStore("users");
-            const req = store.getAll();
-
-            req.onsuccess = () => {
-                const tbody = document.getElementById('account-db-tbody');
-                tbody.innerHTML = '';
-                const users = req.result;
-                const filtered = users.filter(u => u.email.toLowerCase().includes(filter.toLowerCase()));
-
-                if (filtered.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--text-secondary);">No accounts found in database.</td></tr>`;
-                    return;
-                }
-
-                filtered.forEach(user => {
-                    const tr = document.createElement('tr');
-                    tr.style.borderBottom = '1px solid var(--border-color)';
-                    tr.innerHTML = `
-                        <td style="padding: 10px; color: var(--text-color);">${user.email}</td>
-                        <td style="padding: 10px; color: var(--text-secondary); font-family: monospace;">${user.password}</td>
-                        <td style="padding: 10px; text-align: right;">
-                            <button class="action-icon-btn" onclick="copyAccountCreds('${user.email}', '${user.password}')" title="Copy Credentials" style="display: inline-flex;"><span class="material-icons" style="font-size: 18px;">content_copy</span></button>
-                            <button class="action-icon-btn" onclick="deleteAccountRecord('${user.email}')" title="Delete Account" style="display: inline-flex; color: var(--danger);"><span class="material-icons" style="font-size: 18px;">delete</span></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            };
-        }
-
-        function filterAccountDatabase(query) {
-            loadAccountDatabaseTable(query);
-        }
-
-        function copyAccountCreds(email, password) {
-            navigator.clipboard.writeText(`Email: ${email}\nPassword: ${password}`).then(() => {
-                alert('Account credentials copied to clipboard!');
-            });
-        }
-
-        function deleteAccountRecord(email) {
-            if (confirm(`Are you sure you want to delete account ${email}?`)) {
-                const transaction = db.transaction(["users"], "readwrite");
-                const store = transaction.objectStore("users");
-                store.delete(email);
-                transaction.oncomplete = () => {
-                    loadAccountDatabaseTable();
-                    if (currentUser === email) {
-                        localStorage.removeItem("gdrive_current_user");
-                        location.reload();
-                    }
-                };
-            }
-        }
-
-        function exportAccountDatabase() {
-            const transaction = db.transaction(["users"], "readonly");
-            const store = transaction.objectStore("users");
-            const req = store.getAll();
-            req.onsuccess = () => {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(req.result, null, 2));
-                const dlAnchorElem = document.createElement('a');
-                dlAnchorElem.setAttribute("href", dataStr);
-                dlAnchorElem.setAttribute("download", "google_drive_accounts_backup.json");
-                dlAnchorElem.click();
-            };
-        }
+        document.getElementById('close-account-db-btn').onclick = () => closeModal('account-db-modal');
+        document.getElementById('close-account-db-footer-btn').onclick = () => closeModal('account-db-modal');
+        document.getElementById('close-preview-modal-btn').onclick = () => closeModal('preview-modal');
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
+
+        async function loadCloudAccountDatabaseTable(filter = '') {
+            const tbody = document.getElementById('account-db-tbody');
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px;">Loading cloud accounts...</td></tr>`;
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                tbody.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--text-secondary);">No accounts found in cloud database.</td></tr>`;
+                    return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    const user = docSnap.data();
+                    if (filter && !user.email.toLowerCase().includes(filter.toLowerCase())) return;
+
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid var(--border-color)';
+                    tr.innerHTML = `
+                        <td style="padding: 10px; color: var(--text-color);">${user.email}</td>
+                        <td style="padding: 10px; color: var(--text-secondary);">Active Cloud User</td>
+                        <td style="padding: 10px; text-align: right;">
+                            <button class="action-icon-btn" onclick="navigator.clipboard.writeText('${user.email}').then(()=>alert('Email copied!'))" title="Copy Email"><span class="material-icons" style="font-size: 18px;">content_copy</span></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--danger);">Error loading cloud database.</td></tr>`;
+            }
+        }
+
+        document.getElementById('account-search').oninput = (e) => {
+            loadCloudAccountDatabaseTable(e.target.value);
+        };
+
+        document.getElementById('export-accounts-btn').onclick = async () => {
+            const querySnapshot = await getDocs(collection(db, "users"));
+            let users = [];
+            querySnapshot.forEach((docSnap) => users.push(docSnap.data()));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(users, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "cloud_accounts_backup.json");
+            dlAnchorElem.click();
+        };
     </script>
 </body>
 </html>
